@@ -16,7 +16,7 @@ type Config struct {
 }
 
 type sessionMiddleware struct {
-	cfg Config
+	cfg  Config
 	core *fbSession.Session
 }
 
@@ -24,13 +24,13 @@ type sessionMiddleware struct {
 type Session interface {
 	// Return current session's id
 	ID() string
-	// Set the data to store
+	// Set the keys to store
 	Set(key string, value interface{})
-	// Get the data from store
+	// Get the keys from store
 	Get(key string) interface{}
-	// Delete data
+	// Delete keys
 	Delete(key string)
-	// Destroy the session and delete all related stored data
+	// Destroy the session and delete all related stored keys
 	Destroy()
 }
 

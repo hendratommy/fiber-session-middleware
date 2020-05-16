@@ -11,7 +11,7 @@ func main() {
 
 	middleware := sessionMW.New(sessionMW.Config{
 		StoreConfig: session.Config{
-			Lookup:     "cookie:X-Sess-ID",
+			Lookup: "cookie:X-Sess-ID",
 		},
 	})
 
