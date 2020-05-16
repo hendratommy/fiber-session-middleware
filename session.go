@@ -7,15 +7,30 @@ import (
 
 const SessionLocalKey = "session"
 
-type sessionMiddleware struct {
-	sessionContainer *fbSession.Session
+type Config struct {
+	// Filter defines a function to skip middleware.
+	// Optional. Default: nil
+	Filter func(*fiber.Ctx) bool
+	// gofiber/session Config
+	StoreConfig fbSession.Config
 }
 
+type sessionMiddleware struct {
+	cfg Config
+	core *fbSession.Session
+}
+
+// `ctx.Locals("session")` will return `Session` interface
 type Session interface {
+	// Return current session's id
 	ID() string
+	// Set the data to store
 	Set(key string, value interface{})
+	// Get the data from store
 	Get(key string) interface{}
+	// Delete data
 	Delete(key string)
+	// Destroy the session and delete all related stored data
 	Destroy()
 }
 
@@ -35,7 +50,12 @@ func (s *session) Delete(key string) {
 }
 
 func (mw *sessionMiddleware) handler(c *fiber.Ctx) {
-	store := mw.sessionContainer.Get(c)
+	if mw.cfg.Filter != nil && mw.cfg.Filter(c) {
+		c.Next()
+		return
+	}
+
+	store := mw.core.Get(c)
 	defer func() {
 		if l := c.Locals(SessionLocalKey); l != nil {
 			s := l.(*session)
@@ -48,13 +68,13 @@ func (mw *sessionMiddleware) handler(c *fiber.Ctx) {
 	c.Next()
 }
 
-func New(config ...fbSession.Config) func(*fiber.Ctx) {
-	var sessionContainer *fbSession.Session
-	if len(config) == 0 {
-		sessionContainer = fbSession.New()
-	} else {
-		sessionContainer = fbSession.New(config[0])
+func New(config ...Config) func(*fiber.Ctx) {
+	var cfg Config
+	if len(config) > 0 {
+		cfg = config[0]
 	}
-	mw := &sessionMiddleware{sessionContainer: sessionContainer}
+
+	core := fbSession.New(cfg.StoreConfig)
+	mw := &sessionMiddleware{cfg: cfg, core: core}
 	return mw.handler
 }
